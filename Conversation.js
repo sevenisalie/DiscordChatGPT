@@ -1,15 +1,15 @@
-const {openai, models} = require("./init.js")
-const { Configuration, OpenAIApi} = require("openai")
-require('dotenv').config()
+import { Configuration, OpenAIApi } from "openai"
+import "dotenv/config"
 
 class Conversation {
-    model = this.models.davinci
+
     models = {
         davinci: "text-davinci-003",
         curie: "text-curie-001",
         babbage: "text-babbage-001",
         ada: "text-ada-001"
     }
+    model = this.models.davinci
     openai;
     personalities = {
         bubbly: `cheery young gal with an expertise in SEO and marketing with a penchant for cute jokes`,
@@ -32,13 +32,16 @@ class Conversation {
 
         const dataPack ={
             model: this.model,
-            prompt: `You are a ${this.personality}. I want you to act as a keyword research expert that speaks and writes fluent English. Classify each of the 
-            keywords by the search intent, whether commercial, transactional or informational. Then cluster the keywords into groups based on their semantic relevance. 
-            First I want you to give me back a short over list of cluster topics found. Make sure to include at least one cluster topic with longtail potential. 
-            Then I want a list in English as a csv table, 
-            with the following columns:  cluster, keyword, search intent, language. Here are the keywords: ${_prompt}`,
-            temperature: 0,
-            max_tokens: 1000
+            prompt: `You are a ${this.personality}. I want you to act as a keyword research assistant that speaks and writes fluent English. Based on the given keyword prompt, please 
+            generate a list of 3 highly related keyword phrases. Please rank them by their ability 
+            to generate a high click through rate.
+            For each keyword, please also generate a blog post headline or title including the given keyword or phrase. Please also list 5 related keywords to use in the article. Here are the keywords: ${_prompt}
+            here is the format of your response. Don't take the content literally:
+            
+            prompt: initial_keyword
+            response: keyword. blogpost. Related keywords: `,
+            temperature: 0.9,
+            max_tokens: 2048
         }
         try {
             const response = await this.openai.createCompletion(dataPack)
@@ -51,20 +54,22 @@ class Conversation {
     
     cleanTextToTextResponse(_rawResponse) {
         const results = _rawResponse.data.choices
-        return results
+        return results[0]
     }
 
     async ask(prompt) {
         const rawResponse = await this._getTextToText(prompt)
-        const results = cleanTextToTextResponse(rawResponse)    
+        const results = this.cleanTextToTextResponse(rawResponse)    
         return results    
     }
 }
 
 const test = async () => {
     const convo = new Conversation()
-    const response = Conversation.ask("personalized album poster, album poster, downloadable artist poster, musical artist poster, band poster")
-    console.log(call)
+    const response = await convo.ask("panda tshirt")
+    console.log(response.text.length)
+    console.log(typeof response.text)
+    console.log(`${response.text}`)
 }
 
 test()
